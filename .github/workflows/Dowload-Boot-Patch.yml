@@ -1,0 +1,51 @@
+name: Patch boot
+
+on:
+  workflow_dispatch:
+    inputs:
+      boot_url:
+        description: 'Boot.img donwload link'
+        required: true
+        default: 'boot donwload  link'
+
+jobs:
+  Patch-boot:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Dowload dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install aria2 
+          git clone https://github.com/xyazzrany/boot-patch.git patch
+
+      - name: Dowload boot.img
+        run: |
+          cd ${{ github.workspace }}
+          aria2c -x 16 -o boot.img "${{ github.event.inputs.boot_url }}" 
+          
+          
+      - name: Patch boot
+        run: |
+          mv boot.img  patch/
+          cd patch
+          ./boot.sh
+      - name: Submit Information
+        run: |
+          cd ${{ github.workspace }}
+          touch info.md
+          echo "Date:$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S')" >> info.md
+          echo "Dowload Link:${{ github.event.inputs.boot_url }}" >> info.md
+
+
+      - name: Update Release
+        uses: ncipollo/release-action@v1.12.0
+        with:
+            artifacts: "${{ github.workspace }}/patch/done/*"
+            bodyfile: "${{ github.workspace }}/info.md"
+            tag: "Patch_${{ github.run_id }}"
+            token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,53 @@
+name: Dowload ROM Patch boot
+
+on:
+  workflow_dispatch:
+    inputs:
+      rom_url:
+        description: 'Rom donwload link'
+        required: true
+        default: 'Rom donwload  link'
+
+jobs:
+  Patch-boot:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Dowload dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install aria2 unzip
+          git clone https://github.com/xyazzrany/boot-patch.git patch
+
+      - name: Dowload ROM
+        run: |
+          cd ${{ github.workspace }}
+          aria2c -x 16 -o rom.zip "${{ github.event.inputs.rom_url }}" 
+          chmod +x ./payload-dumper-go
+          ./payload-dumper-go -p boot payload.bin -o out
+
+      - name: Patch boot
+        run: |
+          mv out/boot.img patch/
+          cd patch
+          ./boot.sh
+          
+      - name: Submit Information
+        run: |
+          cd ${{ github.workspace }}
+          touch info.md
+          echo "Date:$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S')" >> info.md
+          echo "Dowload Link:${{ github.event.inputs.rom_url }}" >> info.md
+
+
+      - name: Update Release
+        uses: ncipollo/release-action@v1.12.0
+        with:
+            artifacts: "${{ github.workspace }}/patch/done/*"
+            bodyfile: "${{ github.workspace }}/info.md"
+            tag: "Patch_${{ github.run_id }}"
+            token: ${{ secrets.GITHUB_TOKEN }}
