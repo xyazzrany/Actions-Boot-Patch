@@ -26,10 +26,10 @@ jobs:
       - name: Dowload ROM
         run: |
           cd ${{ github.workspace }}
-          aria2c -o rom.zip "${{ github.event.inputs.rom_url }}" 
+          aria2c -x 16 -o rom.zip "${{ github.event.inputs.rom_url }}" 
           unzip rom.zip
           chmod +x ./payload-dumper-go
-          ./payload-dumper-go -p boot payload.bin -o out
+          ./payload-dumper-go -p boot -o out payload.bin
 
       - name: Patch boot
         run: |
