@@ -27,6 +27,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           aria2c -x 16 -o rom.zip "${{ github.event.inputs.rom_url }}" 
+          unzip rom.zip
           chmod +x ./payload-dumper-go
           ./payload-dumper-go -p boot payload.bin -o out
 
